@@ -3,7 +3,7 @@ import torch
 import torchvision
 import torch.nn as nn
 import click
-
+import datetime
 import numpy as np
 from torchvision import transforms
 from torchvision.utils import save_image
@@ -15,7 +15,10 @@ params = {
     'optimizer': 'adam',
     'lr': 2e-4,
     'wd': 0,
-    'epochs': 200
+    'epochs': 200,
+    'image_size': 784,
+    'latent_size': 64,
+    'hidden_size': 256
 }
 
 
@@ -31,11 +34,7 @@ def main():
 def train():
   device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-  latent_size = 64  # ノイズ
-  hidden_size = 256
-  image_size = 784
   sample_dir = 'samples'
-
   os.makedirs(sample_dir, exist_ok=True)
 
   transform = transforms.Compose([
@@ -58,8 +57,9 @@ def train():
       shuffle=True
   )
 
-  D = models.Discriminator(image_size, hidden_size)
-  G = models.Generator(image_size, latent_size, hidden_size)
+  D = models.Discriminator(params['image_size'], params['hidden_size'])
+  G = models.Generator(params['image_size'],
+                       params['latent_size'], params['hidden_size'])
 
   D = D.to(device)
   G = G.to(device)
@@ -82,7 +82,7 @@ def train():
       d_loss_real = criterion(outputs, real_labels)
       real_score = outputs
 
-      z = torch.randn(params['batch_size'], latent_size).to(device)
+      z = torch.randn(params['batch_size'], params['latent_size']).to(device)
       fake_images = G(z)
       outputs = D(fake_images)
       d_loss_fake = criterion(outputs, fake_labels)
@@ -95,7 +95,7 @@ def train():
       d_optimizer.step()
 
       # Train generator
-      z = torch.randn(params['batch_size'], latent_size).to(device)
+      z = torch.randn(params['batch_size'], params['latent_size']).to(device)
       fake_images = G(z)
       outputs = D(fake_images)
 
@@ -121,6 +121,32 @@ def train():
 
   torch.save(G.state_dict(), 'G.ckpt')
   torch.save(D.state_dict(), 'D.ckpt')
+
+
+@main.command()
+def generate():
+  device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+  sample_dir = 'samples'
+  os.makedirs(sample_dir, exist_ok=True)
+
+  G = models.Generator(params['image_size'],
+                       params['latent_size'], params['hidden_size'])
+  G.load_state_dict(torch.load('G.ckpt'))
+  G.eval()
+  G = G.to(device)
+
+  with torch.no_grad():
+    z = torch.randn(params['batch_size'], params['latent_size']).to(device)
+    fake_images = G(z)
+
+  fake_images = fake_images.reshape(params['batch_size'], 1, 28, 28)
+  dt_now = datetime.datetime.now()
+  now_str = dt_now.strftime('%y%m%d%H%M%S')
+  save_image(utils.denorm(fake_images), os.path.join(
+      sample_dir, 'fake_images_{}.png'.format(now_str)))
+  print('Saved Image ' + os.path.join(sample_dir,
+                                      'fake_images_{}.png'.format(now_str)))
 
 
 if __name__ == '__main__':
