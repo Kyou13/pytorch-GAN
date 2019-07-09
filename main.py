@@ -84,7 +84,7 @@ def train():
       real_score = outputs
 
       z = torch.randn(b_size, params['latent_size']).to(device)
-      fake_images = G(z)
+      fake_images = G(z.detach())
       outputs = D(fake_images)
       d_loss_fake = criterion(outputs, fake_labels)
       fake_score = outputs
@@ -95,7 +95,6 @@ def train():
       d_optimizer.step()
 
       # Train generator
-      z = torch.randn(b_size, params['latent_size']).to(device)
       fake_images = G(z)
       outputs = D(fake_images)
 
