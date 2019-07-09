@@ -72,17 +72,18 @@ def train():
   for epoch in range(params['epochs']):
     for i, (images, _) in enumerate(data_loader):  # labelは使わない
       # (batch_size, 1, 28, 28) -> (batch_size, 1*28*28)
-      images = images.reshape(params['batch_size'], -1).to(device)
+      b_size = images.size(0)
+      images = images.reshape(b_size, -1).to(device)
 
-      real_labels = torch.ones(params['batch_size'], 1).to(device)
-      fake_labels = torch.zeros(params['batch_size'], 1).to(device)
+      real_labels = torch.ones(b_size, 1).to(device)
+      fake_labels = torch.zeros(b_size, 1).to(device)
 
       # Train discriminator
       outputs = D(images)
       d_loss_real = criterion(outputs, real_labels)
       real_score = outputs
 
-      z = torch.randn(params['batch_size'], params['latent_size']).to(device)
+      z = torch.randn(b_size, params['latent_size']).to(device)
       fake_images = G(z)
       outputs = D(fake_images)
       d_loss_fake = criterion(outputs, fake_labels)
@@ -90,18 +91,16 @@ def train():
 
       d_loss = d_loss_real + d_loss_fake
       d_optimizer.zero_grad()
-      g_optimizer.zero_grad()
       d_loss.backward()
       d_optimizer.step()
 
       # Train generator
-      z = torch.randn(params['batch_size'], params['latent_size']).to(device)
+      z = torch.randn(b_size, params['latent_size']).to(device)
       fake_images = G(z)
       outputs = D(fake_images)
 
       g_loss = criterion(outputs, real_labels)
 
-      d_optimizer.zero_grad()
       g_optimizer.zero_grad()
       g_loss.backward()
       g_optimizer.step()
@@ -112,10 +111,10 @@ def train():
                       real_score.mean().item(), fake_score.mean().item()))  # .item():ゼロ次元Tensorから値を取り出す
 
     if (epoch + 1) == 1:
-      images = images.reshape(params['batch_size'], 1, 28, 28)
+      images = images.reshape(b_size, 1, 28, 28)
       save_image(utils.denorm(images), os.path.join(
           sample_dir, 'real_images.png'))
-    fake_images = fake_images.reshape(params['batch_size'], 1, 28, 28)
+    fake_images = fake_images.reshape(b_size, 1, 28, 28)
     save_image(utils.denorm(fake_images), os.path.join(
         sample_dir, 'fake_images-{}.png'.format(epoch + 1)))
 
