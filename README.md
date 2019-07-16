@@ -11,6 +11,9 @@ GANのpytorch実装
 ### loss
 ![loss](https://github.com/Kyou13/pytorch-GAN/blob/master/samples/loss.png)
 ### Genarated Image
+- epochs: 200
+  - batch size: 64
+
 ![genaratedImage](https://github.com/Kyou13/pytorch-GAN/blob/master/samples/fake_images_190717030552.png)
 
 ## Requirement
