@@ -4,17 +4,17 @@ GANのpytorch実装
 
 ### GAN
 [papaer link](https://papers.nips.cc/paper/5423-generative-adversarial-nets.pdf)
-- DLによって画像生成を行うモデル
+- 全結合のモデルによって画像生成を行う
 - 2つのモデルを競わせるように学習を行う
 
 ## Example
 ### loss
 ![loss](https://github.com/Kyou13/pytorch-GAN/blob/master/samples/loss.png)
-### Genarated Image
+### Generated Image
 - epochs: 200
   - batch size: 64
 
-![genaratedImage](https://github.com/Kyou13/pytorch-GAN/blob/master/samples/fake_images_190717030552.png)
+![generatedImage](https://github.com/Kyou13/pytorch-GAN/blob/master/samples/fake_images_190717030552.png)
 
 ## Requirement
 - Python 3.7
