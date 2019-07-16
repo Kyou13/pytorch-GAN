@@ -8,10 +8,11 @@ import numpy as np
 from torchvision import transforms
 from torchvision.utils import save_image
 from src import models, utils
+import matplotlib.pyplot as plt
 
 params = {
     'seed': 123456789,
-    'batch_size': 100,
+    'batch_size': 64,
     'optimizer': 'adam',
     'lr': 2e-4,
     'wd': 0,
@@ -68,6 +69,8 @@ def train():
   d_optimizer = utils.get_optim(params, D)
   g_optimizer = utils.get_optim(params, G)
 
+  d_losses = []
+  g_losses = []
   total_step = len(data_loader)
   for epoch in range(params['epochs']):
     for i, (images, _) in enumerate(data_loader):  # labelは使わない
@@ -104,10 +107,12 @@ def train():
       g_loss.backward()
       g_optimizer.step()
 
-      if (i + 1) % 200 == 0:
-        print('Rpoch [{}/{}], step [{}/{}], d_loss: {:.4f}, g_loss: {:.4f}, D(x): {:.2f}, D(G(z)): {:.2f}'
-              .format(epoch, params['epochs'], i + 1, total_step, d_loss.item(), g_loss.item(),
-                      real_score.mean().item(), fake_score.mean().item()))  # .item():ゼロ次元Tensorから値を取り出す
+      print('Epoch [{}/{}], step [{}/{}], d_loss: {:.4f}, g_loss: {:.4f}, D(x): {:.2f}, D(G(z)): {:.2f}'
+            .format(epoch, params['epochs'], i + 1, total_step, d_loss.item(), g_loss.item(),
+                    real_score.mean().item(), fake_score.mean().item()))  # .item():ゼロ次元Tensorから値を取り出す
+
+      d_losses.append(d_loss.item())
+      g_losses.append(g_loss.item())
 
     if (epoch + 1) == 1:
       images = images.reshape(b_size, 1, 28, 28)
@@ -117,8 +122,17 @@ def train():
     save_image(utils.denorm(fake_images), os.path.join(
         sample_dir, 'fake_images-{}.png'.format(epoch + 1)))
 
-  torch.save(G.state_dict(), 'G.ckpt')
-  torch.save(D.state_dict(), 'D.ckpt')
+  torch.save(G.state_dict(), 'weights/G.ckpt')
+  torch.save(D.state_dict(), 'weights/D.ckpt')
+
+  plt.figure(figsize=(10, 5))
+  plt.title("Generator and Discriminator Loss During Training")
+  plt.plot(g_losses, label="Generator")
+  plt.plot(d_losses, label="Discriminator")
+  plt.xlabel("iterations")
+  plt.ylabel("Loss")
+  plt.legend()
+  plt.savefig(os.path.join(sample_dir, 'loss.png'))
 
 
 @main.command()
@@ -130,7 +144,7 @@ def generate():
 
   G = models.Generator(params['image_size'],
                        params['latent_size'], params['hidden_size'])
-  G.load_state_dict(torch.load('G.ckpt'))
+  G.load_state_dict(torch.load('weights/G.ckpt'))
   G.eval()
   G = G.to(device)
 

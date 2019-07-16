@@ -9,7 +9,15 @@ GANのpytorch実装
 - Click
 
 ## Usage
+### Training
 ```
 $ pip install -r requirements.txt
 $ python main.py train
+# training log saved at ./samples/fake_images-[epoch].png
+```
+
+### Generate
+```
+$ python main.py generate
+# saved at ./samples/fake_images_%y%m%d%H%M%S.png
 ```
